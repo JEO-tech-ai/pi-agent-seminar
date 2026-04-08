@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PI Agent 생태계 세미나 - OpenClaw & Beyond</title>
+<style>
+/* ==================== DESIGN TOKENS ==================== */
+:root {
+  --color-bg-primary: #0a0a0f;
+  --color-bg-secondary: #12121a;
+  --color-accent-claw: #7c3aed;
+  --color-accent-glow: #a78bfa;
+  --color-accent-cyan: #06b6d4;
+  --color-accent-emerald: #10b981;
+  --color-accent-amber: #f59e0b;
+  --color-accent-rose: #f43f5e;
+  --color-accent-orange: #f97316;
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+  --color-border: rgba(124, 58, 237, 0.2);
+  --color-glass: rgba(255, 255, 255, 0.05);
+  --color-glass-border: rgba(255, 255, 255, 0.08);
+  --font-display: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  --shadow-glow: 0 0 40px rgba(124, 58, 237, 0.15);
+  --transition-smooth: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* ==================== RESET & BASE ==================== */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css');
+}
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  font-family: var(--font-display);
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ==================== SLIDE CONTAINER ==================== */
+.presentation {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 100px;
+  opacity: 0;
+  transform: translateY(20px) scale(0.98);
+  transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.slide.active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+  z-index: 10;
+}
+
+.slide.exit {
+  opacity: 0;
+  transform: translateY(-20px) scale(1.02);
+  z-index: 5;
+}
+
+/* ==================== BACKGROUND PATTERNS ==================== */
+.slide::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 20% 50%, rgba(124, 58, 237, 0.08) 0%, transparent 50%),
+              radial-gradient(ellipse at 80% 20%, rgba(6, 182, 212, 0.06) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.grid-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(124, 58, 237, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124, 58, 237, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+}
+
+/* ==================== TYPOGRAPHY ==================== */
+.slide-title {
+  font-size: 3.2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, var(--color-text-primary) 0%, var(--color-accent-glow) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-align: center;
+}
+
+.slide-subtitle {
+  font-size: 1.4rem;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+  margin-bottom: 40px;
+  text-align: center;
+}
+
+.section-label {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-accent-claw);
+  background: rgba(124, 58, 237, 0.1);
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  padding: 6px 16px;
+  border-radius: 100px;
+  margin-bottom: 20px;
+}
+
+h2 { font-size: 2rem; font-weight: 700; margin-bottom: 16px; }
+h3 { font-size: 1.3rem; font-weight: 600; margin-bottom: 12px; color: var(--color-accent-glow); }
+p { font-size: 1.05rem; line-height: 1.7; color: var(--color-text-secondary); max-width: 800px; }
+
+/* ==================== CARDS & GLASS ==================== */
+.glass-card {
+  background: var(--color-glass);
+  border: 1px solid var(--color-glass-border);
+  border-radius: var(--radius-lg);
+  padding: 28px 32px;
+  backdrop-filter: blur(12px);
+  transition: var(--transition-smooth);
+}
+
+.glass-card:hover {
+  border-color: rgba(124, 58, 237, 0.3);
+  box-shadow: var(--shadow-glow);
+}
+
+.card-grid {
+  display: grid;
+  gap: 20px;
+  width: 100%;
+  max-width: 1100px;
+}
+
+.card-grid-2 { grid-template-columns: 1fr 1fr; }
+.card-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+.card-grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+.card-grid-5 { grid-template-columns: repeat(5, 1fr); }
+
+/* ==================== TABLE ==================== */
+.data-table {
+  width: 100%;
+  max-width: 1100px;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  font-size: 0.9rem;
+}
+
+.data-table thead th {
+  background: rgba(124, 58, 237, 0.15);
+  color: var(--color-accent-glow);
+  font-weight: 700;
+  padding: 14px 18px;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.data-table tbody td {
+  padding: 12px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: var(--color-text-secondary);
+}
+
+.data-table tbody tr:hover td {
+  background: rgba(124, 58, 237, 0.05);
+}
+
+/* ==================== ICON BADGE ==================== */
+.icon-badge {
+  width: 56px; height: 56px;
+  border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.8rem;
+  margin-bottom: 16px;
+  flex-shrink: 0;
+}
+
+.badge-purple { background: rgba(124, 58, 237, 0.15); }
+.badge-cyan { background: rgba(6, 182, 212, 0.15); }
+.badge-emerald { background: rgba(16, 185, 129, 0.15); }
+.badge-amber { background: rgba(245, 158, 11, 0.15); }
+.badge-rose { background: rgba(244, 63, 94, 0.15); }
+.badge-orange { background: rgba(249, 115, 22, 0.15); }
+
+/* ==================== CLAW LOGO ==================== */
+.claw-logo {
+  font-size: 5rem;
+  margin-bottom: 24px;
+  filter: drop-shadow(0 0 30px rgba(124, 58, 237, 0.4));
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.claw-icon-sm {
+  font-size: 2rem;
+  filter: drop-shadow(0 0 10px rgba(124, 58, 237, 0.3));
+}
+
+/* ==================== CODE BLOCK ==================== */
+.code-block {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(124, 58, 237, 0.15);
+  border-radius: var(--radius-sm);
+  padding: 16px 20px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--color-accent-glow);
+  white-space: pre;
+  overflow-x: auto;
+  margin-top: 12px;
+}
+
+/* ==================== FEATURE LIST ==================== */
+.feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.feature-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--color-accent-claw);
+  margin-top: 8px;
+  flex-shrink: 0;
+  box-shadow: 0 0 8px rgba(124, 58, 237, 0.5);
+}
+
+.feature-text {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+.feature-text strong {
+  color: var(--color-text-primary);
+}
+
+/* ==================== ARCHITECTURE DIAGRAM ==================== */
+.arch-diagram {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--color-accent-glow);
+  white-space: pre;
+  line-height: 1.6;
+  max-width: 900px;
+  width: 100%;
+}
+
+/* ==================== METRIC CARD ==================== */
+.metric-value {
+  font-size: 2.4rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--color-accent-claw), var(--color-accent-cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.metric-label {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin-top: 4px;
+}
+
+/* ==================== PROGRESS BAR ==================== */
+.progress-bar {
+  position: fixed;
+  bottom: 0; left: 0;
+  width: 100%; height: 3px;
+  background: rgba(255, 255, 255, 0.05);
+  z-index: 1000;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-accent-claw), var(--color-accent-cyan));
+  transition: width 0.5s ease;
+  width: 0%;
+  box-shadow: 0 0 10px rgba(124, 58, 237, 0.5);
+}
+
+/* ==================== CONTROLS ==================== */
+.controls {
+  position: fixed;
+  bottom: 20px; right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 1000;
+}
+
+.ctrl-btn {
+  padding: 10px 22px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 100px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  font-size: 0.85rem;
+  font-family: var(--font-display);
+  font-weight: 600;
+  transition: var(--transition-smooth);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ctrl-btn:hover {
+  background: rgba(124, 58, 237, 0.2);
+  border-color: rgba(124, 58, 237, 0.4);
+}
+
+.ctrl-btn.primary {
+  background: linear-gradient(135deg, var(--color-accent-claw), #9333ea);
+  border-color: transparent;
+}
+
+.ctrl-btn.primary:hover {
+  box-shadow: 0 0 20px rgba(124, 58, 237, 0.4);
+}
+
+.slide-counter {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  padding: 8px 14px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 100px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* ==================== SPEAKING INDICATOR ==================== */
+.speaking-indicator {
+  position: fixed;
+  bottom: 20px; left: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.speaking-indicator.active { opacity: 1; }
+
+.wave-bars {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 20px;
+}
+
+.wave-bar {
+  width: 3px;
+  background: var(--color-accent-claw);
+  border-radius: 2px;
+  animation: wave 1.2s ease-in-out infinite;
+}
+
+.wave-bar:nth-child(1) { height: 8px; animation-delay: 0s; }
+.wave-bar:nth-child(2) { height: 14px; animation-delay: 0.15s; }
+.wave-bar:nth-child(3) { height: 10px; animation-delay: 0.3s; }
+.wave-bar:nth-child(4) { height: 16px; animation-delay: 0.45s; }
+.wave-bar:nth-child(5) { height: 6px; animation-delay: 0.6s; }
+
+@keyframes wave {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(1.8); }
+}
+
+.speaking-text {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+/* ==================== START OVERLAY ==================== */
+.start-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: rgba(10, 10, 15, 0.95);
+  z-index: 2000;
+  transition: opacity 0.6s ease;
+}
+
+.start-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.start-btn {
+  width: 120px; height: 120px;
+  border-radius: 50%;
+  border: 2px solid var(--color-accent-claw);
+  background: rgba(124, 58, 237, 0.1);
+  color: white;
+  font-size: 2.5rem;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.start-btn:hover {
+  background: rgba(124, 58, 237, 0.3);
+  box-shadow: 0 0 60px rgba(124, 58, 237, 0.4);
+  transform: scale(1.05);
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.4); }
+  50% { box-shadow: 0 0 0 20px rgba(124, 58, 237, 0); }
+}
+
+.start-label {
+  margin-top: 24px;
+  font-size: 1rem;
+  color: var(--color-text-muted);
+  letter-spacing: 0.1em;
+}
+
+/* ==================== HIGHLIGHT TAG ==================== */
+.tag {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  margin-right: 6px;
+}
+
+.tag-ts { background: rgba(6, 182, 212, 0.15); color: var(--color-accent-cyan); }
+.tag-go { background: rgba(16, 185, 129, 0.15); color: var(--color-accent-emerald); }
+.tag-rust { background: rgba(249, 115, 22, 0.15); color: var(--color-accent-orange); }
+.tag-python { background: rgba(245, 158, 11, 0.15); color: var(--color-accent-amber); }
+.tag-mit { background: rgba(124, 58, 237, 0.15); color: var(--color-accent-glow); }
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 900px) {
+  .slide { padding: 40px 32px; }
+  .slide-title { font-size: 2.2rem; }
+  .card-grid-2, .card-grid-3, .card-grid-4, .card-grid-5 {
+    grid-template-columns: 1fr;
+  }
+  .data-table { font-size: 0.75rem; }
+}
+
+/* ==================== ANIMATIONS ==================== */
+.fade-in-up {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.slide.active .fade-in-up {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.slide.active .fade-in-up:nth-child(2) { transition-delay: 0.1s; }
+.slide.active .fade-in-up:nth-child(3) { transition-delay: 0.2s; }
+.slide.active .fade-in-up:nth-child(4) { transition-delay: 0.3s; }
+.slide.active .fade-in-up:nth-child(5) { transition-delay: 0.4s; }
+
+/* ==================== COMPARISON HIGHLIGHT ==================== */
+.highlight-box {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(6, 182, 212, 0.05));
+  border-left: 3px solid var(--color-accent-claw);
+  padding: 16px 24px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  margin-top: 16px;
+}
+
+.vs-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-accent-claw);
+  margin-bottom: 8px;
+}
+
+/* Wide content */
+.wide-content {
+  width: 100%;
+  max-width: 1100px;
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== START OVERLAY ==================== -->
+<div class="start-overlay" id="startOverlay">
+  <div class="claw-logo">&#129438;</div>
+  <h1 style="font-size:2.4rem; font-weight:800; margin-bottom:8px;
+    background:linear-gradient(135deg,#f1f5f9,#a78bfa);-webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;background-clip:text;">
+    PI Agent 생태계 세미나
+  </h1>
+  <p style="color:var(--color-text-muted); margin-bottom:48px; font-size:1rem;">
+    OpenClaw / NanoClaw / PicoClaw / ZeroClaw / Hermes Agent
+  </p>
+  <button class="start-btn" id="startBtn" onclick="startPresentation()">&#9654;</button>
+  <div class="start-label">클릭하여 발표 시작</div>
+</div>
+
+<!-- ==================== PRESENTATION ==================== -->
+<div class="presentation" id="presentation">
+
+  <!-- SLIDE 0: Title -->
+  <div class="slide active grid-bg" data-bg="#0a0a0f">
+    <div class="claw-logo fade-in-up">&#129438;</div>
+    <div class="section-label fade-in-up">2026 TECHNICAL SEMINAR</div>
+    <h1 class="slide-title fade-in-up" style="font-size:3.6rem;">PI Agent 생태계</h1>
+    <p class="slide-subtitle fade-in-up">
+      OpenClaw, NanoClaw, PicoClaw, ZeroClaw, Hermes Agent<br>
+      차세대 개인 AI 에이전트 프레임워크의 모든 것
+    </p>
+  </div>
+
+  <!-- SLIDE 1: Agenda -->
+  <div class="slide grid-bg">
+    <div class="section-label fade-in-up">AGENDA</div>
+    <h1 class="slide-title fade-in-up">오늘의 발표 순서</h1>
+    <div class="card-grid card-grid-2 fade-in-up" style="max-width:900px;">
+      <div class="glass-card">
+        <h3 style="color:var(--color-accent-claw);">Part 1 - 개념과 배경</h3>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text">PI Agent란 무엇인가?</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text">PI Agent SDK 아키텍처</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text">OpenClaw 핵심 기능</div></div>
+      </div>
+      <div class="glass-card">
+        <h3 style="color:var(--color-accent-cyan);">Part 2 - 생태계 탐험</h3>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text">NanoClaw - 컨테이너 격리</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text">PicoClaw - 엣지 초경량</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text">ZeroClaw - Rust 미니멀</div></div>
+      </div>
+      <div class="glass-card">
+        <h3 style="color:var(--color-accent-emerald);">Part 3 - 비교와 활용</h3>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text">Hermes Agent - 자기 학습</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text">생태계 종합 비교</div></div>
+      </div>
+      <div class="glass-card">
+        <h3 style="color:var(--color-accent-amber);">Part 4 - 실전 가이드</h3>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text">상호운용성과 표준</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text">설치 및 시작하기</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text">Q&A</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 2: What is PI Agent -->
+  <div class="slide grid-bg">
+    <div class="section-label fade-in-up">PART 1</div>
+    <h1 class="slide-title fade-in-up">PI Agent란 무엇인가?</h1>
+    <p class="fade-in-up" style="text-align:center; margin-bottom:32px;">
+      PI(Personal Intelligence)는 LLM 기반 자율 AI 에이전트를 구축하기 위한<br>TypeScript 툴킷으로, OpenClaw의 핵심 런타임 엔진입니다.
+    </p>
+    <div class="card-grid card-grid-4 fade-in-up" style="max-width:1000px;">
+      <div class="glass-card" style="text-align:center;">
+        <div class="icon-badge badge-purple" style="margin:0 auto 12px;">&#128218;</div>
+        <h3 style="font-size:1rem;">pi-ai</h3>
+        <p style="font-size:0.85rem;">LLM 추상화 레이어<br>Model, streamSimple<br>멀티 프로바이더</p>
+      </div>
+      <div class="glass-card" style="text-align:center;">
+        <div class="icon-badge badge-cyan" style="margin:0 auto 12px;">&#9881;</div>
+        <h3 style="font-size:1rem;">pi-agent-core</h3>
+        <p style="font-size:0.85rem;">에이전트 루프<br>도구 실행 엔진<br>AgentMessage 타입</p>
+      </div>
+      <div class="glass-card" style="text-align:center;">
+        <div class="icon-badge badge-emerald" style="margin:0 auto 12px;">&#128187;</div>
+        <h3 style="font-size:1rem;">pi-coding-agent</h3>
+        <p style="font-size:0.85rem;">고수준 SDK<br>SessionManager<br>내장 도구</p>
+      </div>
+      <div class="glass-card" style="text-align:center;">
+        <div class="icon-badge badge-amber" style="margin:0 auto 12px;">&#128421;</div>
+        <h3 style="font-size:1rem;">pi-tui</h3>
+        <p style="font-size:0.85rem;">터미널 UI<br>CLI 인터페이스<br>TUI 컴포넌트</p>
+      </div>
+    </div>
+    <div class="highlight-box fade-in-up" style="max-width:800px; margin-top:24px;">
+      <p style="font-size:0.9rem;"><strong style="color:var(--color-accent-glow);">핵심 철학:</strong> "LLM은 코드를 쓰고 실행하는 데 뛰어나다. 이를 수용하라." - 가장 짧은 시스템 프롬프트, 4개의 핵심 도구(Read, Write, Edit, Bash)만으로 동작</p>
+    </div>
+  </div>
+
+  <!-- SLIDE 3: PI Architecture -->
+  <div class="slide grid-bg">
+    <div class="section-label fade-in-up">ARCHITECTURE</div>
+    <h1 class="slide-title fade-in-up">PI Agent SDK 아키텍처</h1>
+    <div class="arch-diagram fade-in-up">
+   ┌─────────────────────────────────────────────────────┐
+   │                  OpenClaw Gateway                    │
+   │            ws://127.0.0.1:18789                      │
+   ├─────────────────────────────────────────────────────┤
+   │                                                      │
+   │   ┌──────────┐  ┌──────────┐  ┌──────────────────┐  │
+   │   │  WebChat  │  │   CLI    │  │  macOS/iOS App   │  │
+   │   └────┬─────┘  └────┬─────┘  └────────┬─────────┘  │
+   │        │              │                  │            │
+   │        └──────────────┼──────────────────┘            │
+   │                       v                               │
+   │            ┌──────────────────┐                       │
+   │            │  PI Agent Core   │ createAgentSession()  │
+   │            │  ┌────────────┐  │                       │
+   │            │  │ Agent Loop │  │  Read / Write / Edit  │
+   │            │  │ Tool Exec  │  │  Bash / Custom Tools  │
+   │            │  └────────────┘  │                       │
+   │            └────────┬─────────┘                       │
+   │                     v                                 │
+   │   ┌──────────────────────────────────────────────┐   │
+   │   │  LLM Providers: Claude / GPT / DeepSeek ...  │   │
+   │   └──────────────────────────────────────────────┘   │
+   └─────────────────────────────────────────────────────┘</div>
+  </div>
+
+  <!-- SLIDE 4: OpenClaw Overview -->
+  <div class="slide grid-bg">
+    <div class="section-label fade-in-up">OPENCLAW</div>
+    <h1 class="slide-title fade-in-up">OpenClaw - 플래그십 프레임워크</h1>
+    <p class="fade-in-up" style="text-align:center; margin-bottom:24px;">
+      247,000+ GitHub Stars | MIT 라이선스 | 역사상 가장 빠르게 성장한 오픈소스 프로젝트
+    </p>
+    <div class="card-grid card-grid-3 fade-in-up" style="max-width:1000px;">
+      <div class="glass-card" style="text-align:center;">
+        <div class="metric-value">25+</div>
+        <div class="metric-label">메시징 채널</div>
+        <p style="font-size:0.8rem; margin-top:8px;">WhatsApp, Telegram, Slack,<br>Discord, Signal, iMessage...</p>
+      </div>
+      <div class="glass-card" style="text-align:center;">
+        <div class="metric-value">50+</div>
+        <div class="metric-label">외부 서비스 연동</div>
+        <p style="font-size:0.8rem; margin-top:8px;">Spotify, GitHub, Gmail,<br>Obsidian, Todoist...</p>
+      </div>
+      <div class="glass-card" style="text-align:center;">
+        <div class="metric-value">5,700+</div>
+        <div class="metric-label">ClawHub 스킬</div>
+        <p style="font-size:0.8rem; margin-top:8px;">커뮤니티 마켓플레이스<br>번들/관리/워크스페이스</p>
+      </div>
+    </div>
+    <div class="code-block fade-in-up" style="max-width:600px; margin-top:24px;">
+# 설치 (One-liner)
+curl -fsSL https://openclaw.ai/install.sh | bash
+
+# 또는 npm
+npm install -g openclaw@latest
+openclaw onboard --install-daemon</div>
+  </div>
+
+  <!-- SLIDE 5: OpenClaw Key Features -->
+  <div class="slide grid-bg">
+    <div class="section-label fade-in-up">OPENCLAW FEATURES</div>
+    <h1 class="slide-title fade-in-up">OpenClaw 핵심 기능</h1>
+    <div class="card-grid card-grid-2 fade-in-up" style="max-width:1000px;">
+      <div class="glass-card">
+        <h3>&#127760; 멀티채널 라우팅</h3>
+        <p style="font-size:0.9rem;">인바운드 채널/계정/피어를 격리된 에이전트에 라우팅. 에이전트별 워크스페이스와 세션 분리.</p>
+      </div>
+      <div class="glass-card">
+        <h3>&#129504; 영속 메모리</h3>
+        <p style="font-size:0.9rem;">대화 간 개인화. JSONL 트리 구조 세션. 분기, 대안 탐색, 되감기 지원.</p>
+      </div>
+      <div class="glass-card">
+        <h3>&#127912; Canvas & A2UI</h3>
+        <p style="font-size:0.9rem;">에이전트 주도 비주얼 워크스페이스. 브라우저 제어, 스냅샷, 프로필 관리.</p>
+      </div>
+      <div class="glass-card">
+        <h3>&#128266; 음성 & TTS</h3>
+        <p style="font-size:0.9rem;">macOS/iOS 웨이크 워드. Android 연속 음성. ElevenLabs + 시스템 TTS 폴백.</p>
+      </div>
+      <div class="glass-card">
+        <h3>&#9200; Cron & Webhook</h3>
+        <p style="font-size:0.9rem;">스케줄 자동화, 이벤트 트리거. 반복 작업을 자연어로 설정.</p>
+      </div>
+      <div class="glass-card">
+        <h3>&#128241; 디바이스 노드</h3>
+        <p style="font-size:0.9rem;">카메라 캡처, 화면 녹화, 위치 접근, 알림. macOS/Linux/iOS/Android.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 6: NanoClaw -->
+  <div class="slide grid-bg">
+    <div class="section-label fade-in-up">NANOCLAW</div>
+    <h1 class="slide-title fade-in-up">NanoClaw - 컨테이너 격리 경량화</h1>
+    <p class="fade-in-up" style="text-align:center; margin-bottom:24px;">
+      <span class="tag tag-ts">Node.js</span><span class="tag tag-mit">MIT</span>
+      "OpenClaw의 50만 줄을 이해하기 쉬운 단일 프로세스로"
+    </p>
+    <div class="card-grid card-grid-2 fade-in-up" style="max-width:1000px;">
+      <div class="glass-card">
+        <h3>&#128007; 5가지 핵심 원칙</h3>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><strong>미니멀리즘</strong> - 전체 코드베이스를 이해할 수 있는 크기</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><strong>격리</strong> - 컨테이너 기반 보안 (allowlist 아닌 Docker)</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><strong>개인화</strong> - 코드 수정 기반 커스터마이징</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><strong>코드 주도</strong> - config 파일이 아닌 직접 수정</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><strong>AI 네이티브</strong> - Claude Code로 디버깅</div></div>
+      </div>
+      <div class="glass-card">
+        <h3>&#128736; 아키텍처</h3>
+        <div class="arch-diagram" style="font-size:0.75rem; padding:16px;">
+Channels ──> SQLite ──> Polling
+                          │
+                    Container
+                  (Claude Agent SDK)
+                          │
+                    Response ──> User
+
+  * 그룹별 격리된 메모리(CLAUDE.md)
+  * 그룹별 격리된 파일시스템
+  * Agent Swarm 지원</div>
+      </div>
+    </div>
+    <div class="highlight-box fade-in-up" style="max-width:1000px; margin-top:16px;">
+      <p style="font-size:0.9rem;">&#128172; <strong>메시징:</strong> WhatsApp, Telegram, Discord, Slack, Gmail &nbsp;|&nbsp; <strong>런타임:</strong> Docker, Apple Containers</p>
+    </div>
+  </div>
+
+  <!-- SLIDE 7: PicoClaw -->
+  <div class="slide grid-bg">
+    <div class="section-label fade-in-up">PICOCLAW</div>
+    <h1 class="slide-title fade-in-up">PicoClaw - 엣지 디바이스 초경량</h1>
+    <p class="fade-in-up" style="text-align:center; margin-bottom:24px;">
+      <span class="tag tag-go">Go</span>
+      "$10 하드웨어에서 실행되는 AI 에이전트" - Sipeed, 2026년 2월 AI가 하루만에 제작
+    </p>
+    <div class="card-grid card-grid-3 fade-in-up" style="max-width:1000px;">
+      <div class="glass-card" style="text-align:center;">
+        <div class="metric-value" style="font-size:2rem;">&lt;10MB</div>
+        <div class="metric-label">RAM 사용량</div>
+        <p style="font-size:0.8rem; margin-top:8px;">OpenClaw 1GB+ 대비<br>100배 이상 경량</p>
+      </div>
+      <div class="glass-card" style="text-align:center;">
+        <div class="metric-value" style="font-size:2rem;">&lt;1s</div>
+        <div class="metric-label">부팅 시간 (0.8GHz)</div>
+        <p style="font-size:0.8rem; margin-top:8px;">OpenClaw 500s+ 대비<br>즉시 실행</p>
+      </div>
+      <div class="glass-card" style="text-align:center;">
+        <div class="metric-value" style="font-size:2rem;">$10</div>
+        <div class="metric-label">최소 하드웨어 비용</div>
+        <p style="font-size:0.8rem; margin-top:8px;">LicheeRV-Nano<br>RISC-V 기반</p>
+      </div>
+    </div>
+    <div class="card-grid card-grid-2 fade-in-up" style="max-width:1000px; margin-top:16px;">
+      <div class="glass-card">
+        <h3>&#128187; 지원 아키텍처</h3>
+        <p style="font-size:0.9rem; font-family:var(--font-mono);">
+          x86_64 / ARM64 / MIPS / RISC-V / LoongArch
+        </p>
+        <p style="font-size:0.85rem; margin-top:8px;">Android APK, Termux, Docker Compose, WebUI Launcher 지원</p>
+      </div>
+      <div class="glass-card">
+        <h3>&#9889; 핵심 기능</h3>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text">MCP 네이티브 통합</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text">비전 파이프라인 (base64 인코딩)</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text">모델 라우팅 (비용 최적화)</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text">18+ 채널 지원</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 8: ZeroClaw -->
+  <div class="slide grid-bg">
+    <div class="section-label fade-in-up">ZEROCLAW</div>
+    <h1 class="slide-title fade-in-up">ZeroClaw - Rust 미니멀 에이전트</h1>
+    <p class="fade-in-up" style="text-align:center; margin-bottom:24px;">
+      <span class="tag tag-rust">Rust</span>
+      "Zero overhead, Zero compromise" - Harvard & MIT & Sundai.Club, 20,000+ Stars
+    </p>
+    <div class="card-grid card-grid-4 fade-in-up" style="max-width:1000px;">
+      <div class="glass-card" style="text-align:center;">
+        <div class="metric-value" style="font-size:1.8rem;">&lt;5MB</div>
+        <div class="metric-label">RAM</div>
+      </div>
+      <div class="glass-card" style="text-align:center;">
+        <div class="metric-value" style="font-size:1.8rem;">8.8MB</div>
+        <div class="metric-label">바이너리 크기</div>
+      </div>
+      <div class="glass-card" style="text-align:center;">
+        <div class="metric-value" style="font-size:1.8rem;">&lt;10ms</div>
+        <div class="metric-label">시작 시간</div>
+      </div>
+      <div class="glass-card" style="text-align:center;">
+        <div class="metric-value" style="font-size:1.8rem;">22+</div>
+        <div class="metric-label">LLM 프로바이더</div>
+      </div>
+    </div>
+    <div class="card-grid card-grid-2 fade-in-up" style="max-width:1000px; margin-top:16px;">
+      <div class="glass-card">
+        <h3>&#128274; 보안 우선 설계</h3>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text">인증 페어링 필수</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text">워크스페이스 디렉터리 범위 제한</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text">커맨드 허용 목록</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text">암호화된 시크릿 저장</div></div>
+      </div>
+      <div class="glass-card">
+        <h3>&#129520; Trait 기반 모듈 아키텍처</h3>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><strong>Providers</strong> - Anthropic, OpenAI, Gemini, Ollama...</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><strong>Channels</strong> - CLI, Discord (확장 가능)</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><strong>Memory</strong> - SQLite + 벡터 시맨틱 검색</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><strong>Tools</strong> - 웹 쿼리, API 호출, 허용 목록</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 9: Hermes Agent -->
+  <div class="slide grid-bg">
+    <div class="section-label fade-in-up">HERMES AGENT</div>
+    <h1 class="slide-title fade-in-up">Hermes Agent - 자기 학습 에이전트</h1>
+    <p class="fade-in-up" style="text-align:center; margin-bottom:24px;">
+      <span class="tag tag-python">Python</span><span class="tag tag-mit">MIT</span>
+      Nous Research | 33,900+ Stars | OpenClaw의 주요 대안
+    </p>
+    <div class="card-grid card-grid-2 fade-in-up" style="max-width:1000px;">
+      <div class="glass-card">
+        <h3>&#129504; 학습 루프 (핵심 차별점)</h3>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><strong>FTS5 세션 검색</strong> - LLM 요약 기반 크로스 세션 리콜</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><strong>Honcho 사용자 모델링</strong> - 변증법적 사용자 이해 구축</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><strong>메모리 넛지</strong> - 에이전트가 자율적으로 기억할 것을 결정</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><strong>자율 스킬 생성</strong> - 복잡한 작업 후 자동 스킬화</div></div>
+      </div>
+      <div class="glass-card">
+        <h3>&#127919; 핵심 사양</h3>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><strong>200+ LLM 모델</strong> 지원 (OpenRouter, Nous Portal...)</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><strong>6개 터미널 백엔드</strong> - Local, Docker, SSH, Modal...</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><strong>Cron 스케줄러</strong> - 자연어 예약 작업</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><strong>서브에이전트 위임</strong> - 병렬 워크스트림 생성</div></div>
+      </div>
+    </div>
+    <div class="highlight-box fade-in-up" style="max-width:1000px; margin-top:16px;">
+      <div class="vs-badge">&#128293; OpenClaw vs Hermes</div>
+      <p style="font-size:0.9rem;">OpenClaw = <strong>생태계 폭</strong>(25+ 채널, 5,700+ 스킬) &nbsp;|&nbsp; Hermes = <strong>학습 깊이</strong>(자율 스킬 생성, 사용자 모델링)</p>
+    </div>
+  </div>
+
+  <!-- SLIDE 10: Hermes Learning Loop -->
+  <div class="slide grid-bg">
+    <div class="section-label fade-in-up">HERMES LEARNING</div>
+    <h1 class="slide-title fade-in-up">Hermes Agent 학습 루프</h1>
+    <div class="arch-diagram fade-in-up" style="max-width:800px;">
+   ┌─────────────────────────────────────────────┐
+   │              Hermes Learning Loop             │
+   │                                               │
+   │   ┌──────────┐     ┌──────────────────┐      │
+   │   │  사용자   │────>│  작업 수행       │      │
+   │   │  요청     │     │  (도구 호출)     │      │
+   │   └──────────┘     └────────┬─────────┘      │
+   │                             │                  │
+   │                             v                  │
+   │                    ┌────────────────┐          │
+   │                    │  경험 분석     │          │
+   │                    │  (패턴 추출)   │          │
+   │                    └────────┬───────┘          │
+   │                             │                  │
+   │              ┌──────────────┼──────────────┐   │
+   │              v              v              v   │
+   │      ┌────────────┐ ┌────────────┐ ┌────────┐│
+   │      │스킬 자동   │ │사용자 모델 │ │메모리  ││
+   │      │생성/개선   │ │업데이트    │ │강화    ││
+   │      └────────────┘ └────────────┘ └────────┘│
+   │              │              │              │   │
+   │              └──────────────┼──────────────┘   │
+   │                             v                  │
+   │                    ┌────────────────┐          │
+   │                    │ 다음 작업에서  │          │
+   │                    │ 더 나은 성능   │ ◀─ 루프  │
+   │                    └────────────────┘          │
+   └─────────────────────────────────────────────┘</div>
+    <div class="code-block fade-in-up" style="max-width:500px; margin-top:24px; font-size:0.8rem;">
+# OpenClaw에서 Hermes로 마이그레이션
+hermes claw migrate
+# SOUL.md, 메모리, 스킬, API 키 자동 이전</div>
+  </div>
+
+  <!-- SLIDE 11: Full Comparison Table -->
+  <div class="slide grid-bg">
+    <div class="section-label fade-in-up">COMPARISON</div>
+    <h1 class="slide-title fade-in-up">생태계 종합 비교</h1>
+    <div class="wide-content fade-in-up" style="overflow-x:auto;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>항목</th>
+            <th>OpenClaw</th>
+            <th>NanoClaw</th>
+            <th>PicoClaw</th>
+            <th>ZeroClaw</th>
+            <th>Hermes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>언어</strong></td>
+            <td><span class="tag tag-ts">TS/Swift</span></td>
+            <td><span class="tag tag-ts">Node.js</span></td>
+            <td><span class="tag tag-go">Go</span></td>
+            <td><span class="tag tag-rust">Rust</span></td>
+            <td><span class="tag tag-python">Python</span></td>
+          </tr>
+          <tr>
+            <td><strong>RAM</strong></td>
+            <td>&gt;1 GB</td>
+            <td>중간</td>
+            <td>&lt;10 MB</td>
+            <td>&lt;5 MB</td>
+            <td>중간</td>
+          </tr>
+          <tr>
+            <td><strong>채널</strong></td>
+            <td>25+</td>
+            <td>5+</td>
+            <td>18+</td>
+            <td>2+ (CLI, Discord)</td>
+            <td>6+</td>
+          </tr>
+          <tr>
+            <td><strong>보안 모델</strong></td>
+            <td>페어링 + 샌드박스</td>
+            <td>Docker 컨테이너 격리</td>
+            <td>-</td>
+            <td>워크스페이스 스코핑</td>
+            <td>-</td>
+          </tr>
+          <tr>
+            <td><strong>핵심 차별점</strong></td>
+            <td style="color:var(--color-accent-claw);">생태계 폭</td>
+            <td style="color:var(--color-accent-cyan);">컨테이너 격리</td>
+            <td style="color:var(--color-accent-emerald);">엣지 하드웨어</td>
+            <td style="color:var(--color-accent-orange);">최소 바이너리</td>
+            <td style="color:var(--color-accent-amber);">자기 학습</td>
+          </tr>
+          <tr>
+            <td><strong>Stars</strong></td>
+            <td>247K+</td>
+            <td>-</td>
+            <td>-</td>
+            <td>20K+</td>
+            <td>33.9K</td>
+          </tr>
+          <tr>
+            <td><strong>스킬</strong></td>
+            <td>ClawHub 5,700+</td>
+            <td>Claude Code</td>
+            <td>MCP 서버</td>
+            <td>허용 목록</td>
+            <td>자율 생성</td>
+          </tr>
+          <tr>
+            <td><strong>LLM</strong></td>
+            <td>Claude, GPT, 로컬</td>
+            <td>Claude (Agent SDK)</td>
+            <td>라우팅 기반 다중</td>
+            <td>22+ 프로바이더</td>
+            <td>200+ (OpenRouter)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SLIDE 12: Ecosystem Hierarchy -->
+  <div class="slide grid-bg">
+    <div class="section-label fade-in-up">ECOSYSTEM MAP</div>
+    <h1 class="slide-title fade-in-up">생태계 계층 구조</h1>
+    <div class="arch-diagram fade-in-up" style="max-width:800px;">
+   PI (pi-mono)                 Core Agent SDK
+     │                          Mario Zechner (badlogic)
+     v
+   OpenClaw                     Flagship - 247K+ Stars
+     │                          Peter Steinberger
+     │
+     ├── NanoClaw               Container-isolated
+     │     (qwibitai)           단일 프로세스, Docker 격리
+     │
+     ├── PicoClaw               Edge/Embedded
+     │     (Sipeed)             Go, &lt;10MB, $10 하드웨어
+     │
+     ├── ZeroClaw               Minimal Binary
+     │     (Harvard/MIT)        Rust, &lt;5MB, &lt;10ms
+     │
+     └── NemoClaw               Enterprise Security
+           (Nvidia)             OpenShell 샌드박싱
+
+   Hermes Agent                 Self-Learning Alternative
+     (Nous Research)            학습 루프, 33.9K Stars</div>
+    <div class="card-grid card-grid-2 fade-in-up" style="max-width:800px; margin-top:20px;">
+      <div class="glass-card" style="text-align:center;">
+        <h3>&#128279; 공통 표준</h3>
+        <p style="font-size:0.85rem;">agentskills.io 오픈 스킬 표준<br>OGP (Open Gateway Protocol)</p>
+      </div>
+      <div class="glass-card" style="text-align:center;">
+        <h3>&#127968; 공통 철학</h3>
+        <p style="font-size:0.85rem;">개인 AI 소유권<br>로컬 퍼스트, 프라이버시 중심</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 13: Interoperability -->
+  <div class="slide grid-bg">
+    <div class="section-label fade-in-up">INTEROPERABILITY</div>
+    <h1 class="slide-title fade-in-up">상호운용성과 표준</h1>
+    <div class="card-grid card-grid-2 fade-in-up" style="max-width:1000px;">
+      <div class="glass-card">
+        <div class="icon-badge badge-purple">&#128279;</div>
+        <h3>agentskills.io</h3>
+        <p style="font-size:0.9rem;">
+          OpenClaw과 Hermes Agent가 공유하는 <strong>오픈 스킬 표준</strong>.<br>
+          스킬 정의, 메타데이터, 실행 인터페이스를 통일하여<br>
+          프레임워크 간 스킬 호환성을 보장합니다.
+        </p>
+      </div>
+      <div class="glass-card">
+        <div class="icon-badge badge-cyan">&#127760;</div>
+        <h3>OGP (Open Gateway Protocol)</h3>
+        <p style="font-size:0.9rem;">
+          서로 다른 프레임워크의 에이전트가 <strong>암호화 서명된 메시지</strong>를<br>
+          교환하는 연합(Federation) 레이어.<br>
+          크로스 프레임워크 에이전트 통신을 가능하게 합니다.
+        </p>
+      </div>
+      <div class="glass-card">
+        <div class="icon-badge badge-emerald">&#128268;</div>
+        <h3>MCP (Model Context Protocol)</h3>
+        <p style="font-size:0.9rem;">
+          PicoClaw이 네이티브로 지원하는 도구 연결 표준.<br>
+          어떤 MCP 서버든 연결하여 에이전트에<br>
+          새로운 능력을 부여할 수 있습니다.
+        </p>
+      </div>
+      <div class="glass-card">
+        <div class="icon-badge badge-amber">&#128272;</div>
+        <h3>Gateway WebSocket</h3>
+        <p style="font-size:0.9rem;">
+          OpenClaw의 <strong>ws://127.0.0.1:18789</strong> 제어 평면.<br>
+          세션, 채널, 도구, 이벤트를 단일 포인트에서<br>
+          조율하는 로컬 우선 아키텍처.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 14: Use Cases -->
+  <div class="slide grid-bg">
+    <div class="section-label fade-in-up">USE CASES</div>
+    <h1 class="slide-title fade-in-up">프레임워크 선택 가이드</h1>
+    <div class="card-grid card-grid-2 fade-in-up" style="max-width:1000px;">
+      <div class="glass-card">
+        <h3>&#127968; 개인 AI 비서가 필요할 때</h3>
+        <p style="font-size:0.9rem; margin-bottom:12px;">다양한 메시징 채널에서 작동하는 올인원 솔루션</p>
+        <div style="padding:8px 16px; background:rgba(124,58,237,0.1); border-radius:8px; text-align:center;">
+          <strong style="color:var(--color-accent-claw);">&#10132; OpenClaw</strong>
+        </div>
+      </div>
+      <div class="glass-card">
+        <h3>&#128274; 보안이 최우선일 때</h3>
+        <p style="font-size:0.9rem; margin-bottom:12px;">에이전트 실행 환경의 완전한 격리가 필요</p>
+        <div style="padding:8px 16px; background:rgba(6,182,212,0.1); border-radius:8px; text-align:center;">
+          <strong style="color:var(--color-accent-cyan);">&#10132; NanoClaw</strong>
+        </div>
+      </div>
+      <div class="glass-card">
+        <h3>&#128225; IoT/엣지 디바이스에서 실행할 때</h3>
+        <p style="font-size:0.9rem; margin-bottom:12px;">저사양 하드웨어, 소형 SBC, 임베디드 환경</p>
+        <div style="padding:8px 16px; background:rgba(16,185,129,0.1); border-radius:8px; text-align:center;">
+          <strong style="color:var(--color-accent-emerald);">&#10132; PicoClaw</strong>
+        </div>
+      </div>
+      <div class="glass-card">
+        <h3>&#9889; 최소 리소스로 최대 성능을 원할 때</h3>
+        <p style="font-size:0.9rem; margin-bottom:12px;">단일 바이너리, 초고속 시작, Rust 안정성</p>
+        <div style="padding:8px 16px; background:rgba(249,115,22,0.1); border-radius:8px; text-align:center;">
+          <strong style="color:var(--color-accent-orange);">&#10132; ZeroClaw</strong>
+        </div>
+      </div>
+    </div>
+    <div class="glass-card fade-in-up" style="max-width:1000px; margin-top:16px; text-align:center;">
+      <h3>&#129504; 에이전트가 스스로 성장하길 원할 때</h3>
+      <p style="font-size:0.9rem;">자율 스킬 생성, 사용자 모델링, 세션 간 학습 - <strong style="color:var(--color-accent-amber);">&#10132; Hermes Agent</strong></p>
+    </div>
+  </div>
+
+  <!-- SLIDE 15: Quick Start Guide -->
+  <div class="slide grid-bg">
+    <div class="section-label fade-in-up">QUICK START</div>
+    <h1 class="slide-title fade-in-up">빠른 시작 가이드</h1>
+    <div class="card-grid card-grid-2 fade-in-up" style="max-width:1000px;">
+      <div class="glass-card">
+        <h3 style="color:var(--color-accent-claw);">OpenClaw</h3>
+        <div class="code-block" style="font-size:0.78rem;">curl -fsSL https://openclaw.ai/install.sh | bash
+openclaw onboard --install-daemon
+openclaw doctor  # 설정 검증</div>
+      </div>
+      <div class="glass-card">
+        <h3 style="color:var(--color-accent-cyan);">NanoClaw</h3>
+        <div class="code-block" style="font-size:0.78rem;">git clone https://github.com/qwibitai/nanoclaw
+cd nanoclaw
+# Claude Code에서 /setup 실행</div>
+      </div>
+      <div class="glass-card">
+        <h3 style="color:var(--color-accent-emerald);">PicoClaw</h3>
+        <div class="code-block" style="font-size:0.78rem;"># WebUI Launcher (권장)
+git clone https://github.com/sipeed/picoclaw
+make build
+# http://localhost:18800</div>
+      </div>
+      <div class="glass-card">
+        <h3 style="color:var(--color-accent-orange);">ZeroClaw</h3>
+        <div class="code-block" style="font-size:0.78rem;"># 단일 바이너리 다운로드
+curl -fsSL https://zeroclaw.bot/install | bash
+zeroclaw init
+zeroclaw run</div>
+      </div>
+    </div>
+    <div class="glass-card fade-in-up" style="max-width:1000px; margin-top:16px;">
+      <h3 style="color:var(--color-accent-amber);">Hermes Agent</h3>
+      <div class="code-block" style="font-size:0.78rem;">curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh | bash
+hermes claw migrate  # OpenClaw에서 마이그레이션 (선택)</div>
+    </div>
+  </div>
+
+  <!-- SLIDE 16: Key Takeaways -->
+  <div class="slide grid-bg">
+    <div class="section-label fade-in-up">KEY TAKEAWAYS</div>
+    <h1 class="slide-title fade-in-up">핵심 요약</h1>
+    <div class="card-grid card-grid-3 fade-in-up" style="max-width:1000px;">
+      <div class="glass-card" style="text-align:center;">
+        <div style="font-size:3rem; margin-bottom:12px;">&#127758;</div>
+        <h3 style="font-size:1.1rem;">다양성</h3>
+        <p style="font-size:0.85rem;">하나의 SDK(PI)에서 출발하여<br>각기 다른 문제를 해결하는<br>5개 이상의 프레임워크로 발전</p>
+      </div>
+      <div class="glass-card" style="text-align:center;">
+        <div style="font-size:3rem; margin-bottom:12px;">&#128274;</div>
+        <h3 style="font-size:1.1rem;">로컬 퍼스트</h3>
+        <p style="font-size:0.85rem;">모든 처리는 사용자 디바이스에서.<br>프라이버시와 데이터 주권을<br>최우선으로 하는 공통 철학</p>
+      </div>
+      <div class="glass-card" style="text-align:center;">
+        <div style="font-size:3rem; margin-bottom:12px;">&#128640;</div>
+        <h3 style="font-size:1.1rem;">선택의 자유</h3>
+        <p style="font-size:0.85rem;">풀스택(OpenClaw)부터<br>마이크로(PicoClaw)까지<br>용도에 맞는 최적 선택 가능</p>
+      </div>
+    </div>
+    <div class="highlight-box fade-in-up" style="max-width:1000px; margin-top:24px; text-align:center;">
+      <p style="font-size:1.05rem;"><strong style="color:var(--color-accent-glow);">"개인 AI의 미래는 하나의 거대한 플랫폼이 아닌, 상호운용 가능한 경량 에이전트들의 생태계에 있습니다."</strong></p>
+    </div>
+  </div>
+
+  <!-- SLIDE 17: Thank You -->
+  <div class="slide grid-bg">
+    <div class="claw-logo fade-in-up" style="font-size:4rem;">&#129438;</div>
+    <h1 class="slide-title fade-in-up" style="font-size:3rem;">감사합니다</h1>
+    <p class="slide-subtitle fade-in-up">
+      PI Agent 생태계 세미나
+    </p>
+    <div class="card-grid card-grid-3 fade-in-up" style="max-width:800px; margin-top:24px;">
+      <div class="glass-card" style="text-align:center; font-size:0.85rem;">
+        <strong>OpenClaw</strong><br>
+        <span style="color:var(--color-text-muted);">openclaw.ai</span>
+      </div>
+      <div class="glass-card" style="text-align:center; font-size:0.85rem;">
+        <strong>Hermes Agent</strong><br>
+        <span style="color:var(--color-text-muted);">NousResearch</span>
+      </div>
+      <div class="glass-card" style="text-align:center; font-size:0.85rem;">
+        <strong>PI Agent SDK</strong><br>
+        <span style="color:var(--color-text-muted);">docs.openclaw.ai/pi</span>
+      </div>
+    </div>
+    <p class="fade-in-up" style="margin-top:32px; font-size:1.2rem; color:var(--color-text-muted);">
+      Q&A
+    </p>
+  </div>
+
+</div>
+
+<!-- ==================== CONTROLS ==================== -->
+<div class="speaking-indicator" id="speakingIndicator">
+  <div class="wave-bars">
+    <div class="wave-bar"></div>
+    <div class="wave-bar"></div>
+    <div class="wave-bar"></div>
+    <div class="wave-bar"></div>
+    <div class="wave-bar"></div>
+  </div>
+  <span class="speaking-text" id="speakingStatus">발표 중...</span>
+</div>
+
+<div class="controls" id="controls" style="display:none;">
+  <button class="ctrl-btn" id="prevBtn" onclick="manualPrev()">&#9664;</button>
+  <span class="slide-counter"><span id="currentNum">1</span> / <span id="totalNum">18</span></span>
+  <button class="ctrl-btn" id="nextBtn" onclick="manualNext()">&#9654;</button>
+  <button class="ctrl-btn" id="pauseBtn" onclick="togglePause()">&#10074;&#10074; 일시정지</button>
+  <button class="ctrl-btn" id="stopBtn" onclick="stopPresentation()">&#9632; 정지</button>
+</div>
+
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill"></div>
+</div>
+
+<!-- ==================== SCRIPT ==================== -->
+<script>
+// ==================== AUDIO PLAYER (Gemini TTS) ====================
+const TOTAL_SLIDES = 18;
+const audioFiles = Array.from({length: TOTAL_SLIDES}, (_, i) =>
+  `audio/slide-${String(i).padStart(2, '0')}.wav`
+);
+
+let currentAudio = null;
+
+const state = {
+  currentSlide: 0,
+  isPlaying: false,
+  isPaused: false,
+  totalSlides: TOTAL_SLIDES,
+  audioLoaded: false
+};
+
+// Pre-load audio elements
+const audioElements = audioFiles.map(src => {
+  const audio = new Audio();
+  audio.preload = 'auto';
+  audio.src = src;
+  return audio;
+});
+
+// Check if audio files exist
+function checkAudioFiles() {
+  let loaded = 0;
+  audioElements.forEach((audio, i) => {
+    audio.addEventListener('canplaythrough', () => {
+      loaded++;
+      if (loaded === TOTAL_SLIDES) {
+        state.audioLoaded = true;
+        console.log('All audio files loaded');
+      }
+    }, { once: true });
+    audio.addEventListener('error', () => {
+      console.warn(`Audio not found: ${audioFiles[i]} - will use Web Speech API fallback`);
+    }, { once: true });
+  });
+}
+
+// ==================== PLAYBACK ====================
+function playSlideAudio(slideIndex, onComplete) {
+  stopCurrentAudio();
+
+  const audio = audioElements[slideIndex];
+  if (!audio || audio.error) {
+    // Fallback to Web Speech API if audio file missing
+    fallbackSpeak(slideIndex, onComplete);
+    return;
+  }
+
+  currentAudio = audio;
+  currentAudio.currentTime = 0;
+
+  currentAudio.onended = () => {
+    currentAudio = null;
+    onComplete();
+  };
+
+  currentAudio.onerror = () => {
+    currentAudio = null;
+    fallbackSpeak(slideIndex, onComplete);
+  };
+
+  currentAudio.play().catch(() => {
+    fallbackSpeak(slideIndex, onComplete);
+  });
+}
+
+function stopCurrentAudio() {
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.currentTime = 0;
+    currentAudio.onended = null;
+    currentAudio = null;
+  }
+  // Also cancel any fallback speech
+  if (window.speechSynthesis) speechSynthesis.cancel();
+}
+
+// ==================== WEB SPEECH API FALLBACK ====================
+const fallbackNarrations = [
+  `안녕하세요. PI Agent 생태계 세미나에 오신 것을 환영합니다.`,
+  `오늘 발표는 네 파트로 구성됩니다.`,
+  `PI Agent란 무엇일까요? LLM 기반 자율 AI 에이전트를 구축하기 위한 TypeScript 툴킷입니다.`,
+  `PI Agent의 아키텍처를 살펴보겠습니다.`,
+  `OpenClaw는 PI Agent 위에 구축된 플래그십 프레임워크입니다.`,
+  `OpenClaw의 핵심 기능을 살펴보겠습니다.`,
+  `NanoClaw는 OpenClaw의 컨테이너 격리 경량 대안입니다.`,
+  `PicoClaw는 10달러 하드웨어에서 실행되는 Go 기반 에이전트입니다.`,
+  `ZeroClaw는 Rust로 작성된 미니멀 에이전트입니다.`,
+  `Hermes Agent는 자기 학습 에이전트입니다.`,
+  `Hermes의 학습 루프를 살펴보겠습니다.`,
+  `다섯 가지 프레임워크를 비교해 보겠습니다.`,
+  `생태계의 전체 계층 구조입니다.`,
+  `상호운용성 표준을 알아보겠습니다.`,
+  `프레임워크 선택 가이드입니다.`,
+  `빠른 시작 가이드입니다.`,
+  `핵심 요약입니다.`,
+  `감사합니다. 질문해 주세요.`,
+];
+
+function fallbackSpeak(slideIndex, onComplete) {
+  if (!window.speechSynthesis) { onComplete(); return; }
+  const text = fallbackNarrations[slideIndex] || '';
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'ko-KR';
+  utterance.rate = 1.05;
+  utterance.onend = onComplete;
+  utterance.onerror = onComplete;
+  speechSynthesis.speak(utterance);
+}
+
+// ==================== PRESENTATION CONTROL ====================
+function startPresentation() {
+  state.isPlaying = true;
+  state.isPaused = false;
+  state.currentSlide = 0;
+
+  document.getElementById('startOverlay').classList.add('hidden');
+  document.getElementById('controls').style.display = 'flex';
+
+  showSlide(0);
+  setTimeout(() => narrateCurrentSlide(), 800);
+}
+
+function narrateCurrentSlide() {
+  if (!state.isPlaying || state.isPaused) return;
+
+  document.getElementById('speakingIndicator').classList.add('active');
+  document.getElementById('speakingStatus').textContent =
+    `슬라이드 ${state.currentSlide + 1} / ${state.totalSlides} 발표 중...`;
+
+  playSlideAudio(state.currentSlide, () => {
+    document.getElementById('speakingIndicator').classList.remove('active');
+    if (state.isPlaying && !state.isPaused) {
+      setTimeout(() => advanceSlide(), 800);
+    }
+  });
+}
+
+function advanceSlide() {
+  if (state.currentSlide < state.totalSlides - 1) {
+    state.currentSlide++;
+    showSlide(state.currentSlide);
+    setTimeout(() => narrateCurrentSlide(), 600);
+  } else {
+    state.isPlaying = false;
+    document.getElementById('speakingIndicator').classList.remove('active');
+    document.getElementById('speakingStatus').textContent = '발표 완료';
+  }
+}
+
+function showSlide(index) {
+  const slides = document.querySelectorAll('.slide');
+  slides.forEach((s, i) => {
+    s.classList.remove('active', 'exit');
+    if (i < index) s.classList.add('exit');
+    if (i === index) s.classList.add('active');
+  });
+  updateProgress();
+  updateCounter();
+}
+
+function updateProgress() {
+  const pct = ((state.currentSlide + 1) / state.totalSlides) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+function updateCounter() {
+  document.getElementById('currentNum').textContent = state.currentSlide + 1;
+  document.getElementById('totalNum').textContent = state.totalSlides;
+}
+
+function togglePause() {
+  const btn = document.getElementById('pauseBtn');
+  if (state.isPaused) {
+    state.isPaused = false;
+    if (currentAudio) currentAudio.play();
+    btn.innerHTML = '&#10074;&#10074; 일시정지';
+    document.getElementById('speakingIndicator').classList.add('active');
+  } else {
+    state.isPaused = true;
+    if (currentAudio) currentAudio.pause();
+    btn.innerHTML = '&#9654; 재개';
+    document.getElementById('speakingIndicator').classList.remove('active');
+  }
+}
+
+function stopPresentation() {
+  stopCurrentAudio();
+  state.isPlaying = false;
+  state.isPaused = false;
+  document.getElementById('speakingIndicator').classList.remove('active');
+  document.getElementById('controls').style.display = 'none';
+  document.getElementById('startOverlay').classList.remove('hidden');
+}
+
+function manualPrev() {
+  if (state.currentSlide > 0) {
+    stopCurrentAudio();
+    state.currentSlide--;
+    showSlide(state.currentSlide);
+    if (state.isPlaying && !state.isPaused) {
+      setTimeout(() => narrateCurrentSlide(), 400);
+    }
+  }
+}
+
+function manualNext() {
+  if (state.currentSlide < state.totalSlides - 1) {
+    stopCurrentAudio();
+    state.currentSlide++;
+    showSlide(state.currentSlide);
+    if (state.isPlaying && !state.isPaused) {
+      setTimeout(() => narrateCurrentSlide(), 400);
+    }
+  }
+}
+
+// ==================== KEYBOARD NAVIGATION ====================
+document.addEventListener('keydown', (e) => {
+  switch(e.key) {
+    case ' ':
+      e.preventDefault();
+      if (state.isPlaying) togglePause();
+      break;
+    case 'ArrowRight':
+    case 'PageDown':
+      e.preventDefault();
+      manualNext();
+      break;
+    case 'ArrowLeft':
+    case 'PageUp':
+      e.preventDefault();
+      manualPrev();
+      break;
+    case 'Escape':
+      e.preventDefault();
+      stopPresentation();
+      break;
+    case 'Enter':
+      e.preventDefault();
+      if (!state.isPlaying) startPresentation();
+      break;
+  }
+});
+
+// ==================== INIT ====================
+document.addEventListener('DOMContentLoaded', () => {
+  updateCounter();
+  checkAudioFiles();
+});
+</script>
+</body>
+</html>
